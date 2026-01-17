@@ -1,45 +1,79 @@
-import os, requests, re, json
+import os
+import requests
+import json
+import re
 from dotenv import load_dotenv
 
 load_dotenv()
+
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+MODEL = "gemini-2.5-flash"
+
+URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={GEMINI_API_KEY}"
 
 def clean_json(text):
     text = re.sub(r"```json|```", "", text)
     return text.strip()
 
 def process_message(message: str):
-    model = "gemini-2.5-flash"
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
-
     prompt = f"""
-Extract travel info in JSON.
+You are an API. Return ONLY valid JSON.
+No markdown, no explanation.
+
+Allowed intents (pick exactly one):
+- flight
+- hotel
+- plan trip
+
 Message: "{message}"
 
-Return only JSON:
+JSON format:
 {{
-  "intent": "",
+  "intent": "flight | hotel | plan trip",
   "destination": "",
   "budget": "",
   "trip_type": ""
 }}
 """
 
-    body = {
+    payload = {
         "contents": [
-            {"parts": [{"text": prompt}]}
+            {
+                "parts": [
+                    {"text": prompt}
+                ]
+            }
         ]
     }
 
-    response = requests.post(url, json=body)
-    data = response.json()
+    try:
+        response = requests.post(URL, json=payload, timeout=20)
+        data = response.json()
+    except Exception as e:
+        print("Request error:", e)
+        return fallback()
 
-    ai_text = data["candidates"][0]["content"]["parts"][0]["text"]
+    if "candidates" not in data:
+        print("Gemini error:", data)
+        return fallback()
 
-    # CLEAN
-    cleaned = clean_json(ai_text)
+    try:
+        raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
+        cleaned = clean_json(raw_text)
+        parsed = json.loads(cleaned)
+        return parsed
+    except Exception as e:
+        print("Parse error:", e)
+        print("Raw:", raw_text)
+        return fallback()
 
-    # PARSE to real JSON
-    parsed = json.loads(cleaned)
 
-    return parsed
+def fallback():
+    return {
+        "intent": "plan trip",
+        "destination": "",
+        "budget": "",
+        "trip_type": ""
+    }
+
+

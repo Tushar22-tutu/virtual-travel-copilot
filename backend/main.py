@@ -8,4 +8,5 @@ app = FastAPI()
 def copilot(data: dict):
     ai_json = process_message(data["message"])
     result = decide_action(ai_json)
+    print("AI JSON:", ai_json)
     return result
