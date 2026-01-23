@@ -17,13 +17,25 @@ def clean_json(text):
 
 def process_message(message: str):
     prompt = f"""
-You are an API. Return ONLY valid JSON.
-No markdown, no explanation.
+You are an intelligent travel-planning API.
 
-Allowed intents (pick exactly one):
+Return ONLY valid JSON.
+No markdown, no extra text, no explanation.
+
+First, understand the user's intent and classify it into exactly one:
 - flight
 - hotel
 - plan trip
+
+Then analyze the user's budget:
+- If the budget is too LOW for the destination, reply with intent "plan trip" and set trip_type to "increase_budget".
+- If the budget is HIGH, suggest a luxury option and set trip_type to "luxury".
+- If the budget is NORMAL, set trip_type to "standard".
+
+Assume:
+- Domestic trips usually need at least 8k–15k INR
+- International trips usually need at least 40k–60k INR
+- Budget > 1 lakh INR = luxury
 
 Message: "{message}"
 
@@ -32,7 +44,7 @@ JSON format:
   "intent": "flight | hotel | plan trip",
   "destination": "",
   "budget": "",
-  "trip_type": ""
+  "trip_type": "increase_budget | standard | luxury"
 }}
 """
 

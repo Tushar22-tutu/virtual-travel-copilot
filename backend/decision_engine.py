@@ -16,11 +16,11 @@ def normalize_intent(intent: str):
         return "unknown"
 
 
-def fix_destination(ai_json: dict):
-    # Agar destination empty ho to demo ke liye default set karo
-    if not ai_json.get("destination") or ai_json.get("destination") == "":
-        ai_json["destination"] = "Goa"
+def fix_destination(ai_json):
+    if not ai_json.get("destination") or ai_json["destination"] == "":
+        ai_json["destination"] = "Unknown"
     return ai_json
+
 
 
 def decide_action(ai_json: dict):
